@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/Silo-Server/silo-plugin-sportarr/metadata"
+	"github.com/prairie-server/prairie-plugin-metadata-sportarr/metadata"
 )
 
 type Provider struct {

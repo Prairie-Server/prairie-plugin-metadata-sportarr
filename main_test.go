@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	publicmanifest "github.com/Silo-Server/silo-plugin-sdk/pkg/pluginsdk/manifest"
+	publicmanifest "github.com/prairie-server/prairie-plugin-sdk/pkg/pluginsdk/manifest"
 )
 
 // Sportarr is a specialist provider: sports leagues rendered as TV shows. It
@@ -49,8 +49,8 @@ func TestManifestLoads(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load manifest: %v", err)
 	}
-	if m.PluginId != "silo.sportarr" {
-		t.Errorf("expected plugin_id silo.sportarr, got %s", m.PluginId)
+	if m.PluginId != "prairie.sportarr" {
+		t.Errorf("expected plugin_id prairie.sportarr, got %s", m.PluginId)
 	}
 	if len(m.Capabilities) != 1 {
 		t.Fatalf("expected 1 capability, got %d", len(m.Capabilities))

@@ -11,12 +11,12 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	pluginv1 "github.com/Silo-Server/silo-plugin-sdk/pkg/pluginproto/silo/plugin/v1"
-	publicmanifest "github.com/Silo-Server/silo-plugin-sdk/pkg/pluginsdk/manifest"
-	"github.com/Silo-Server/silo-plugin-sdk/pkg/pluginsdk/runtime"
-	"github.com/Silo-Server/silo-plugin-sdk/pkg/pluginsdk/runtimedefault"
-	"github.com/Silo-Server/silo-plugin-sportarr/metadata"
-	"github.com/Silo-Server/silo-plugin-sportarr/provider"
+	pluginv1 "github.com/prairie-server/prairie-plugin-sdk/pkg/pluginproto/prairie/plugin/v1"
+	publicmanifest "github.com/prairie-server/prairie-plugin-sdk/pkg/pluginsdk/manifest"
+	"github.com/prairie-server/prairie-plugin-sdk/pkg/pluginsdk/runtime"
+	"github.com/prairie-server/prairie-plugin-sdk/pkg/pluginsdk/runtimedefault"
+	"github.com/prairie-server/prairie-plugin-metadata-sportarr/metadata"
+	"github.com/prairie-server/prairie-plugin-metadata-sportarr/provider"
 )
 
 var version string
