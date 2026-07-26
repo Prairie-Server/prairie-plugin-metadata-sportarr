@@ -18,13 +18,13 @@ Version is injected at build time via `-X main.version=...` from git tags.
 
 ## SDK Dependency
 
-The SDK (`github.com/Silo-Server/silo-plugin-sdk`) is a private module. For local development, use a `go.work` file or temporary `replace` directive pointing at a local checkout — but never commit filesystem-local replaces. CI enforces this check and runs with `GOWORK=off`.
+The SDK (`github.com/prairie-server/prairie-plugin-sdk`) is a private module. For local development, use a `go.work` file or temporary `replace` directive pointing at a local checkout — but never commit filesystem-local replaces. CI enforces this check and runs with `GOWORK=off`.
 
-CI also sets `GOPROXY=direct`, `GOPRIVATE=github.com/Silo-Server/*`, `GONOSUMDB=github.com/Silo-Server/*`.
+CI also sets `GOPROXY=direct`, `GOPRIVATE=github.com/prairie-server/*`, `GONOSUMDB=github.com/prairie-server/*`.
 
 ## Architecture
 
-This is a Silo metadata-provider plugin that serves sports league data from the Sportarr API as TV series metadata (leagues→series, seasons→seasons, events→episodes).
+This is a Prairie metadata-provider plugin that serves sports league data from the Sportarr API as TV series metadata (leagues→series, seasons→seasons, events→episodes).
 
 **Plugin entry point (`main.go`):** Embeds `manifest.json`, configures the gRPC plugin server via the SDK's `runtime.Serve`. Two server structs — `runtimeServer` handles `GetManifest`/`Configure`; `metadataServer` handles all metadata RPCs (Search, GetMetadata, GetSeasons, GetEpisodes, GetImages, ResolveImageURL/URLs). Image URLs are converted to/from a `sportarr://` canonical scheme for storage-agnostic persistence.
 
@@ -36,4 +36,4 @@ This is a Silo metadata-provider plugin that serves sports league data from the 
 
 ## Release
 
-Pushing a `v*` tag triggers the release workflow which cross-compiles, creates a GitHub Release, and dispatches to the `silo-plugins` catalog repo. Running `workflow_dispatch` on main auto-bumps the patch version.
+Pushing a `v*` tag triggers the release workflow which cross-compiles, creates a GitHub Release, and dispatches to the `prairie-plugins` catalog repo. Running `workflow_dispatch` on main auto-bumps the patch version.

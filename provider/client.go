@@ -54,7 +54,7 @@ func (c *Client) doGet(ctx context.Context, path string, dest any) error {
 			return fmt.Errorf("sportarr: create request: %w", err)
 		}
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("User-Agent", "silo-plugin-sportarr/1.0")
+		req.Header.Set("User-Agent", "prairie-plugin-metadata-sportarr/1.0")
 		req.Header.Set("Cache-Control", "no-cache, no-store")
 		req.Header.Set("Pragma", "no-cache")
 

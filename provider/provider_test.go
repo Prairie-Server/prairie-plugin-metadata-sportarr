@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Silo-Server/silo-plugin-sportarr/metadata"
+	"github.com/prairie-server/prairie-plugin-metadata-sportarr/metadata"
 )
 
 func newTestProvider(t *testing.T, handler http.Handler) *Provider {
