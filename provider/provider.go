@@ -273,4 +273,3 @@ func (p *Provider) GetImages(ctx context.Context, req metadata.ImageRequest) ([]
 	}
 	return entityImagesToRemote(resp.Images), nil
 }
-

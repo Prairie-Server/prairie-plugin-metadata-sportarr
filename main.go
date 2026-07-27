@@ -15,6 +15,7 @@ import (
 	publicmanifest "github.com/prairie-server/prairie-plugin-sdk/pkg/pluginsdk/manifest"
 	"github.com/prairie-server/prairie-plugin-sdk/pkg/pluginsdk/runtime"
 	"github.com/prairie-server/prairie-plugin-sdk/pkg/pluginsdk/runtimedefault"
+
 	"github.com/prairie-server/prairie-plugin-metadata-sportarr/metadata"
 	"github.com/prairie-server/prairie-plugin-metadata-sportarr/provider"
 )

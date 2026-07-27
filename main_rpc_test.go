@@ -7,41 +7,41 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	pluginv1 "github.com/prairie-server/prairie-plugin-sdk/pkg/pluginproto/prairie/plugin/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/prairie-server/prairie-plugin-metadata-sportarr/metadata"
 	"github.com/prairie-server/prairie-plugin-metadata-sportarr/provider"
-	pluginv1 "github.com/prairie-server/prairie-plugin-sdk/pkg/pluginproto/prairie/plugin/v1"
 )
 
 func testSportarrServers(t *testing.T) (*metadataServer, *httptest.Server) {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		switch {
-		case r.URL.Path == "/api/metadata/agents/search":
+		switch r.URL.Path {
+		case "/api/metadata/agents/search":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"results": []map[string]any{
 					{"id": "league-1", "title": "Premier League", "year": 1992, "overview": "Football"},
 				},
 			})
-		case r.URL.Path == "/api/metadata/agents/series/league-1":
+		case "/api/metadata/agents/series/league-1":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"title": "Premier League", "summary": "Football", "year": 1992, "genres": []string{"Sports"}, "studio": "FA",
 			})
-		case r.URL.Path == "/api/metadata/agents/series/league-1/seasons":
+		case "/api/metadata/agents/series/league-1/seasons":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"seasons": []map[string]any{
 					{"competition_season_id": "cs-2024", "season_number": 2024, "name": "2024", "overview": "Season", "air_date": "2024-01-01"},
 				},
 			})
-		case r.URL.Path == "/api/metadata/agents/series/league-1/season/2024/episodes":
+		case "/api/metadata/agents/series/league-1/season/2024/episodes":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"episodes": []map[string]any{
 					{"id": "ev-1", "title": "Match 1", "season_number": 2024, "episode_number": 1, "overview": "Kickoff", "air_date": "2024-08-01", "duration_minutes": 90},
 				},
 			})
-		case r.URL.Path == "/api/v1/images/entity/league/league-1":
+		case "/api/v1/images/entity/league/league-1":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"images": []map[string]any{
 					{"id": "p1", "image_type": "poster", "url": "https://sportarr.net/api/v1/images/p1", "is_primary": true},
@@ -51,7 +51,7 @@ func testSportarrServers(t *testing.T) (*metadataServer, *httptest.Server) {
 					{"id": "t1", "image_type": "thumbnail", "url": "https://sportarr.net/api/v1/images/t1"},
 				},
 			})
-		case r.URL.Path == "/api/v1/images/entity/season/cs-2024":
+		case "/api/v1/images/entity/season/cs-2024":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"images": []map[string]any{
 					{"id": "sp1", "image_type": "poster", "url": "https://sportarr.net/api/v1/images/sp1", "is_primary": true},
