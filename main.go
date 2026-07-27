@@ -24,6 +24,11 @@ var version string
 
 const defaultBaseURL = "https://sportarr.net"
 
+var (
+	osExecutable = os.Executable
+	osReadFile   = os.ReadFile
+)
+
 func sportarrCanonicalPath(baseURL, imageURL string) string {
 	if imageURL == "" {
 		return ""
@@ -296,11 +301,11 @@ func loadManifest() (*pluginv1.PluginManifest, error) {
 		manifest.Version = version
 	}
 
-	executablePath, err := os.Executable()
+	executablePath, err := osExecutable()
 	if err != nil {
 		return nil, fmt.Errorf("resolve executable path: %w", err)
 	}
-	binaryData, err := os.ReadFile(executablePath)
+	binaryData, err := osReadFile(executablePath)
 	if err != nil {
 		return nil, fmt.Errorf("read executable %q: %w", executablePath, err)
 	}

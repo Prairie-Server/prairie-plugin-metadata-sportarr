@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -119,6 +120,38 @@ func TestRuntimeGetManifestConfigureAndProvider(t *testing.T) {
 	p := provider.NewProvider(rt.baseURL)
 	if p.Name() != "Sportarr" || len(p.ForTypes()) != 1 {
 		t.Fatalf("provider meta: %s %v", p.Name(), p.ForTypes())
+	}
+}
+
+func TestLoadManifestErrorPaths(t *testing.T) {
+	originalManifest := manifestJSON
+	originalExecutable := osExecutable
+	originalReadFile := osReadFile
+	t.Cleanup(func() {
+		manifestJSON = originalManifest
+		osExecutable = originalExecutable
+		osReadFile = originalReadFile
+	})
+
+	manifestJSON = []byte(`{`)
+	if _, err := loadManifest(); err == nil {
+		t.Fatal("expected invalid manifest error")
+	}
+	manifestJSON = originalManifest
+
+	osExecutable = func() (string, error) {
+		return "", errors.New("no executable")
+	}
+	if _, err := loadManifest(); err == nil {
+		t.Fatal("expected executable error")
+	}
+	osExecutable = originalExecutable
+
+	osReadFile = func(string) ([]byte, error) {
+		return nil, errors.New("read failed")
+	}
+	if _, err := loadManifest(); err == nil {
+		t.Fatal("expected read executable error")
 	}
 }
 
@@ -241,6 +274,11 @@ func TestHelperProtoMappers(t *testing.T) {
 	}, "series", "https://sportarr.net")
 	if err != nil || item.GetTitle() != "T" || item.GetPosterPath() != "sportarr:///api/v1/images/p1" {
 		t.Fatalf("%v %#v", err, item)
+	}
+	if _, err := metadataItemFromResult(&metadata.MetadataResult{
+		ProviderIDs: map[string]string{string([]byte{0xff}): "bad"},
+	}, "series", "https://sportarr.net"); err == nil {
+		t.Fatal("expected invalid provider id key error")
 	}
 
 	_ = metadataRequestFromProto(&pluginv1.GetMetadataRequest{ProviderId: "x", ItemType: "series"}, "sportarr")
