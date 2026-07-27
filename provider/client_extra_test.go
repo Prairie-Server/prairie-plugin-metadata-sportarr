@@ -68,6 +68,27 @@ func TestClientRetryAndErrors(t *testing.T) {
 		}
 	})
 
+	t.Run("invalid request url", func(t *testing.T) {
+		c := NewClient(100)
+		c.SetBaseURL("http://example.com/%zz")
+		if err := c.doGet(context.Background(), "", &struct{}{}); err == nil {
+			t.Fatal("expected request creation error")
+		}
+	})
+
+	t.Run("request failure", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {}))
+		url := srv.URL
+		srv.Close()
+
+		c := NewClient(100)
+		c.httpClient.Timeout = 50 * time.Millisecond
+		c.SetBaseURL(url)
+		if err := c.doGet(context.Background(), "/x", &struct{}{}); err == nil {
+			t.Fatal("expected request failure")
+		}
+	})
+
 	t.Run("exhausted 500", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusBadGateway)
