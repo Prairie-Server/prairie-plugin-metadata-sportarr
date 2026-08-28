@@ -59,7 +59,19 @@ func TestClientRetryAndErrors(t *testing.T) {
 		}
 	})
 
-	t.Run("canceled wait", func(t *testing.T) {
+	t.Run("unexpected status code", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusMovedPermanently)
+		}))
+		defer srv.Close()
+		c := NewClient(100)
+		c.SetBaseURL(srv.URL)
+		if err := c.doGet(context.Background(), "/api/x", &struct{}{}); err == nil {
+			t.Fatal("expected unexpected status error")
+		}
+	})
+
+	t.Run("rate limit ctx cancel", func(t *testing.T) {
 		c := NewClient(100)
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
