@@ -28,7 +28,7 @@ func testSportarrServers(t *testing.T) (*metadataServer, *httptest.Server) {
 			})
 		case "/api/metadata/agents/series/league-1":
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"title": "Premier League", "summary": "Football", "year": 1992, "genres": []string{"Sports"}, "studio": "FA",
+				"title": "Premier League", "summary": "Football", "year": 1992, "genres": []string{"Sports"}, "studio": "FA", "hub_id": "league-1",
 			})
 		case "/api/metadata/agents/series/league-1/seasons":
 			_ = json.NewEncoder(w).Encode(map[string]any{
@@ -66,6 +66,7 @@ func testSportarrServers(t *testing.T) (*metadataServer, *httptest.Server) {
 
 	client := provider.NewClient(100)
 	client.SetBaseURL(srv.URL)
+	client.SetAPIKey("test-api-key")
 	rt := &runtimeServer{
 		provider: provider.NewProviderWithClient(client),
 		baseURL:  srv.URL,
