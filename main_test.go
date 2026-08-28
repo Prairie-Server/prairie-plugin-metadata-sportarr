@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -364,4 +365,70 @@ func containsAll(value string, needles ...string) bool {
 		}
 	}
 	return true
+}
+
+func TestResolveImageURLErrorPaths(t *testing.T) {
+	t.Run("provider not configured", func(t *testing.T) {
+		server := &metadataServer{runtime: &runtimeServer{baseURLConfigured: true}}
+		if got := server.resolveImageURL(context.Background(), "/api/v1/images/image-1", ""); got != "" {
+			t.Fatalf("expected empty URL when provider missing, got %q", got)
+		}
+	})
+
+	t.Run("redirect resolution failed", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+		}))
+		defer srv.Close()
+
+		configured, err := structpb.NewStruct(map[string]any{"base_url": srv.URL})
+		if err != nil {
+			t.Fatal(err)
+		}
+		runtime := &runtimeServer{}
+		if _, err := runtime.Configure(context.Background(), &pluginv1.ConfigureRequest{Config: []*pluginv1.ConfigEntry{{Key: "sportarr", Value: configured}}}); err != nil {
+			t.Fatalf("configure: %v", err)
+		}
+		server := &metadataServer{runtime: runtime}
+		if got := server.resolveImageURL(context.Background(), "/api/v1/images/image-1", ""); got != "" {
+			t.Fatalf("expected empty URL on redirect failure, got %q", got)
+		}
+	})
+}
+
+func TestSportarrCanonicalPathWithQueryAndFragment(t *testing.T) {
+	got := sportarrCanonicalPath("https://sportarr.net", "https://sportarr.net/api/images/abc123?size=large#layer")
+	if want := "sportarr:///api/images/abc123?size=large#layer"; got != want {
+		t.Fatalf("canonical path = %q, want %q", got, want)
+	}
+}
+
+func TestSportarrCanonicalPathInvalidBaseURL(t *testing.T) {
+	if got := sportarrCanonicalPath("://bad", "https://example.com/x.jpg"); got != "https://example.com/x.jpg" {
+		t.Fatalf("invalid base passthrough = %q", got)
+	}
+}
+
+func TestEffectivePortNonHTTPScheme(t *testing.T) {
+	value, err := url.Parse("ftp://example.com:2121/file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := effectivePort(value); got != "2121" {
+		t.Fatalf("explicit port = %q", got)
+	}
+	value, err = url.Parse("ftp://example.com/file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := effectivePort(value); got != "" {
+		t.Fatalf("non-http default port = %q, want empty", got)
+	}
+}
+
+func TestSportarrCanonicalPathInvalidRelativePath(t *testing.T) {
+	got := sportarrCanonicalPath("https://sportarr.net", "//evil.com/x.jpg")
+	if want := "//evil.com/x.jpg"; got != want {
+		t.Fatalf("scheme-relative passthrough = %q, want %q", got, want)
+	}
 }

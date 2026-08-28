@@ -433,3 +433,146 @@ func TestResolveImageRedirectRejectsPrivateTarget(t *testing.T) {
 		t.Fatalf("private redirect error = %v, want globally-routable rejection", err)
 	}
 }
+
+func TestNewClientDefaultRateLimit(t *testing.T) {
+	c := NewClient(-1)
+	if c.limiter == nil {
+		t.Fatal("expected default rate limiter")
+	}
+}
+
+func TestRequestURLInvalidPaths(t *testing.T) {
+	c := NewClient(100)
+	c.SetBaseURL("https://sportarr.net")
+	for _, path := range []string{"/api/v1/images/image-1#frag", "//api/v1/images/image-1"} {
+		if _, err := c.requestURL(path); err == nil {
+			t.Fatalf("requestURL(%q) should fail", path)
+		}
+	}
+	c.SetBaseURL("://bad")
+	if _, err := c.requestURL("/api/v1/images/image-1"); err == nil {
+		t.Fatal("expected invalid base URL error")
+	}
+}
+
+func TestSetHTTPClient(t *testing.T) {
+	c := NewClient(100)
+	custom := &http.Client{Timeout: 1}
+	c.SetHTTPClient(custom)
+	if c.httpClient != custom {
+		t.Fatal("SetHTTPClient did not replace request client")
+	}
+}
+
+func TestProviderResolveImageRedirect(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Location", "https://8.8.8.8/formula-1.jpg")
+		w.WriteHeader(http.StatusFound)
+	}))
+	defer srv.Close()
+
+	c := NewClient(100)
+	c.SetBaseURL(srv.URL)
+	p := NewProviderWithClient(c)
+	got, err := p.ResolveImageRedirect(context.Background(), "/api/v1/images/image-1")
+	if err != nil {
+		t.Fatalf("provider redirect: %v", err)
+	}
+	if got != "https://8.8.8.8/formula-1.jpg" {
+		t.Fatalf("redirect target = %q", got)
+	}
+}
+
+func TestResolveImageRedirectErrorPaths(t *testing.T) {
+	c := NewClient(100)
+	c.SetBaseURL("https://sportarr.net")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := c.ResolveImageRedirect(ctx, "/api/v1/images/image-1"); err == nil {
+		t.Fatal("expected canceled context error")
+	}
+
+	if _, err := c.ResolveImageRedirect(context.Background(), "/images/bad"); err == nil {
+		t.Fatal("expected invalid path error")
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer srv.Close()
+	c.SetBaseURL(srv.URL)
+	if _, err := c.ResolveImageRedirect(context.Background(), "/api/v1/images/image-1"); err == nil {
+		t.Fatal("expected HTTP status error")
+	}
+
+	srvBadLocation := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Location", "http://cdn.example/formula-1.jpg")
+		w.WriteHeader(http.StatusFound)
+	}))
+	defer srvBadLocation.Close()
+	c.SetBaseURL(srvBadLocation.URL)
+	if _, err := c.ResolveImageRedirect(context.Background(), "/api/v1/images/image-1"); err == nil {
+		t.Fatal("expected non-HTTPS location error")
+	}
+
+	srvLookupFail := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Location", "https://cdn.example/formula-1.jpg")
+		w.WriteHeader(http.StatusFound)
+	}))
+	defer srvLookupFail.Close()
+	c.SetBaseURL(srvLookupFail.URL)
+	c.lookupIP = func(context.Context, string) ([]net.IP, error) {
+		return nil, io.EOF
+	}
+	if _, err := c.ResolveImageRedirect(context.Background(), "/api/v1/images/image-1"); err == nil {
+		t.Fatal("expected lookup failure")
+	}
+
+	srvPrivateDNS := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Location", "https://cdn.example/formula-1.jpg")
+		w.WriteHeader(http.StatusFound)
+	}))
+	defer srvPrivateDNS.Close()
+	c.SetBaseURL(srvPrivateDNS.URL)
+	c.lookupIP = func(context.Context, string) ([]net.IP, error) {
+		return []net.IP{net.ParseIP("10.0.0.1")}, nil
+	}
+	if _, err := c.ResolveImageRedirect(context.Background(), "/api/v1/images/image-1"); err == nil {
+		t.Fatal("expected private DNS target rejection")
+	}
+
+	srvBadPort := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Location", "https://cdn.example:99999/formula-1.jpg")
+		w.WriteHeader(http.StatusFound)
+	}))
+	defer srvBadPort.Close()
+	c.SetBaseURL(srvBadPort.URL)
+	if _, err := c.ResolveImageRedirect(context.Background(), "/api/v1/images/image-1"); err == nil {
+		t.Fatal("expected invalid port error")
+	}
+}
+
+func TestIsGloballyRoutableIP(t *testing.T) {
+	if !isGloballyRoutableIP(net.ParseIP("8.8.8.8")) {
+		t.Fatal("public IPv4 should be routable")
+	}
+	if isGloballyRoutableIP(net.ParseIP("127.0.0.1")) {
+		t.Fatal("loopback should not be routable")
+	}
+	if isGloballyRoutableIP(net.ParseIP("10.0.0.1")) {
+		t.Fatal("private IPv4 should not be routable")
+	}
+	if isGloballyRoutableIP(net.ParseIP("100.64.0.1")) {
+		t.Fatal("CGNAT range should not be routable")
+	}
+	if !isGloballyRoutableIP(net.ParseIP("2001:4860:4860::8888")) {
+		t.Fatal("public IPv6 should be routable")
+	}
+	if isGloballyRoutableIP(net.ParseIP("2001:db8::1")) {
+		t.Fatal("documentation IPv6 should not be routable")
+	}
+	if isGloballyRoutableIP(net.ParseIP("fe80::1")) {
+		t.Fatal("link-local IPv6 should not be routable")
+	}
+}

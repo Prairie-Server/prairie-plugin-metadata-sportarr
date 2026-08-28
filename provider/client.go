@@ -315,7 +315,7 @@ func (c *Client) ResolveImageRedirect(ctx context.Context, path string) (string,
 	if err != nil {
 		return "", fmt.Errorf("sportarr: image redirect request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < http.StatusMultipleChoices || resp.StatusCode >= http.StatusBadRequest {
 		return "", fmt.Errorf("sportarr: image redirect returned HTTP %d", resp.StatusCode)

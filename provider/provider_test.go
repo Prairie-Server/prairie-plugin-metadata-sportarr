@@ -656,3 +656,33 @@ func TestEntityImagesToRemoteEmpty(t *testing.T) {
 		t.Errorf("expected empty result, got %d", len(result))
 	}
 }
+
+func TestGetImagesEmptyProviderID(t *testing.T) {
+	p := NewProvider("")
+	images, err := p.GetImages(context.Background(), metadata.ImageRequest{ContentType: "series"})
+	if err != nil || images != nil {
+		t.Fatalf("empty provider id: err=%v images=%v", err, images)
+	}
+}
+
+func TestGetImagesSeasonWithoutAPIKey(t *testing.T) {
+	p := NewProvider("https://sportarr.net")
+	images, err := p.GetImages(context.Background(), metadata.ImageRequest{
+		ProviderIDs: map[string]string{"sportarr": "season-1"},
+		ContentType: "season",
+	})
+	if err != nil || images != nil {
+		t.Fatalf("season without api key: err=%v images=%v", err, images)
+	}
+}
+
+func TestPublicSeriesImagesIncludesAllArtwork(t *testing.T) {
+	images := publicSeriesImages(&AgentSeriesResponse{
+		PosterURL: "https://sportarr.net/poster.jpg",
+		FanartURL: "https://sportarr.net/fanart.jpg",
+		BannerURL: "https://sportarr.net/banner.jpg",
+	})
+	if len(images) != 3 {
+		t.Fatalf("expected 3 images, got %d", len(images))
+	}
+}
