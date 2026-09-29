@@ -1,4 +1,4 @@
-.PHONY: build test lint clean build-all
+.PHONY: build test lint vet clean build-all
 
 BINARY=plugin
 PLATFORMS=linux/amd64 linux/arm64 darwin/arm64
@@ -13,6 +13,9 @@ test:
 
 lint:
 	golangci-lint run ./...
+
+vet:
+	go vet ./...
 
 clean:
 	rm -f $(BINARY)
