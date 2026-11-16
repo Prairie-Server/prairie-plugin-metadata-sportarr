@@ -36,4 +36,4 @@ This is a Prairie metadata-provider plugin that serves sports league data from t
 
 ## Release
 
-Pushing a `v*` tag triggers the release workflow which cross-compiles, creates a GitHub Release, and dispatches to the `prairie-plugins` catalog repo. Running `workflow_dispatch` on main auto-bumps the patch version.
+A release is a merged pull request that sets `version` in `manifest.json`, then a maintainer pushes the matching `v<version>` tag on that commit. The tag runs `release.yml`, which calls the shared `Prairie-Server/.github` plugin release workflow to build, sign, publish, and notify the `prairie-plugins` catalog. There is no manual-dispatch release. See [CONTRIBUTING.md](CONTRIBUTING.md#release).
